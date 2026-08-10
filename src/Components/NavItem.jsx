@@ -29,6 +29,7 @@ const NavItem = (props) => {
 
     <NavLink
       to={to}
+      onClick={onClick}
       className={({ isActive }) => `
         ${baseStyles}
         ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-50 hover:text-blue-600"}

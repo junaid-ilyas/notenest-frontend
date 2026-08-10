@@ -47,11 +47,11 @@ const MobileSidebar = ({ isOpen, onClose, }) => {
 
                 <div className="flex flex-col items-center justify-between h-full px-3 mt-10">
                     <nav className="flex flex-col gap-2 w-[90%]">
-                        <NavItem icon={Home} label="Home" to="/"  mobile  />
-                        <NavItem icon={Heart} label="Favorite" to='/favorites'  mobile />
-                        <NavItem icon={Clock} label="Reminders" to='/reminders' mobile />
-                        <NavItem icon={User} label="Profile"  to='/profile' mobile />
-                        <NavItem icon={Trash2} label="Trash"  to="/trash" mobile />
+                        <NavItem icon={Home} label="Home" to="/" mobile onClick={onClose} />
+                        <NavItem icon={Heart} label="Favorite" to="/favorites" mobile onClick={onClose} />
+                        <NavItem icon={Clock} label="Reminders" to="/reminders" mobile onClick={onClose} />
+                        <NavItem icon={User} label="Profile" to="/profile" mobile onClick={onClose} />
+                        <NavItem icon={Trash2} label="Trash" to="/trash" mobile onClick={onClose} />
                     </nav>
 
 

@@ -99,7 +99,7 @@ const NoteCard = memo(({ note }) => {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className='text-gray-400 p-1.5 hover:bg-black/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity'
+            className='text-gray-400 p-1.5 hover:bg-black/5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity'
           >
             <MoreVertical className='size-4' />
           </button>
@@ -261,5 +261,4 @@ const NoteCard = memo(({ note }) => {
 
 
 export default NoteCard;
-
 

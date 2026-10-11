@@ -10,11 +10,13 @@ const NotesGrid = ({ view }) => {
     const {
         notes,
         loading,
+        fetchError,
         hasMore,
         lastNoteElementRef,
         searchQuery,
         setSearchQuery,
         handleEmptyTrash,
+        retryFetchNotes,
         setView,
     } = useContext(NoteContext);
 
@@ -77,9 +79,23 @@ const NotesGrid = ({ view }) => {
                 {/* Empty State */}
                 {notes.length === 0 && !loading && (
                     <div className="flex flex-col items-center justify-center py-20">
-                        <Search className="size-12 text-gray-200 mb-4 animate-bounce" />
-                        <p className="text-gray-500 font-medium">No notes found</p>
-                        {searchQuery && (
+                        {fetchError ? (
+                            <>
+                                <p className="text-gray-500 font-medium">Could not load notes.</p>
+                                <button
+                                    onClick={retryFetchNotes}
+                                    className="mt-2 text-blue-500 text-sm hover:underline"
+                                >
+                                    Try again
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Search className="size-12 text-gray-200 mb-4 animate-bounce" />
+                                <p className="text-gray-500 font-medium">No notes found</p>
+                            </>
+                        )}
+                        {!fetchError && searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
                                 className="mt-2 text-blue-500 text-sm hover:underline"
@@ -92,7 +108,19 @@ const NotesGrid = ({ view }) => {
 
                 {/* Infinite Scroll Observer Trigger */}
                 <div ref={lastNoteElementRef} className="h-20 w-full flex items-center justify-center">
-                    {loading && <p className="text-gray-400 text-sm">Loading more notes...</p>}
+                    {loading && (
+                        <p className="text-gray-400 text-sm">
+                            {notes.length === 0 ? "Loading notes..." : "Loading more notes..."}
+                        </p>
+                    )}
+                    {!loading && fetchError && notes.length > 0 && (
+                        <button
+                            onClick={retryFetchNotes}
+                            className="text-blue-500 text-sm hover:underline"
+                        >
+                            Could not load more notes. Try again
+                        </button>
+                    )}
                     {!hasMore && notes.length > 0 && (
                         <p className="text-gray-400 italic font-light text-sm">You've reached the end of your nest 🏁</p>
                     )}

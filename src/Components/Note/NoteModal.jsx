@@ -1,5 +1,6 @@
 
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { NoteContext } from '../../Context/NoteContext';
 import {
     Plus,
@@ -31,6 +32,9 @@ const NoteModal = ({ isOpen, onClose }) => {
 
     const bgColorPickerRef = useRef(null);
     const reminderPickerRef = useRef(null);
+    const reminderButtonRef = useRef(null);
+    const reminderPopoverRef = useRef(null);
+    const [reminderPosition, setReminderPosition] = useState(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -51,12 +55,52 @@ const NoteModal = ({ isOpen, onClose }) => {
                 setShowBgColorPicker(false);
             }
             if (reminderPickerRef.current && !reminderPickerRef.current.contains(event.target)) {
-                setShowReminderPicker(false);
+                if (!reminderPopoverRef.current?.contains(event.target)) {
+                    setShowReminderPicker(false);
+                }
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!showReminderPicker) return undefined;
+
+        const updateReminderPosition = () => {
+            const trigger = reminderButtonRef.current?.getBoundingClientRect();
+            const popover = reminderPopoverRef.current;
+            if (!trigger || !popover) return;
+
+            const margin = 8;
+            const popoverWidth = popover.offsetWidth;
+            const popoverHeight = popover.offsetHeight;
+            const centeredLeft = trigger.left + (trigger.width - popoverWidth) / 2;
+            const left = Math.min(
+                Math.max(margin, centeredLeft),
+                window.innerWidth - popoverWidth - margin
+            );
+            let top = trigger.top - popoverHeight - 12;
+
+            if (top < margin) {
+                top = Math.min(
+                    trigger.bottom + 12,
+                    window.innerHeight - popoverHeight - margin
+                );
+            }
+
+            setReminderPosition({ top: Math.max(margin, top), left });
+        };
+
+        updateReminderPosition();
+        window.addEventListener('resize', updateReminderPosition);
+        window.addEventListener('scroll', updateReminderPosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updateReminderPosition);
+            window.removeEventListener('scroll', updateReminderPosition, true);
+        };
+    }, [showReminderPicker]);
 
     const getLaterToday = () => {
         const d = new Date();
@@ -115,7 +159,11 @@ const NoteModal = ({ isOpen, onClose }) => {
             ...editingNote,
             title: title,
             content: type === 'TODO' ? '' : content,
-            items: type === 'TODO' ? items : [],
+            items: type === 'TODO'
+                ? items
+                    .filter(item => item.text.trim())
+                    .map(item => ({ ...item, text: item.text.trim() }))
+                : [],
             type: type,
             isPinned: isPinned,
             bgColor: bgColor,
@@ -356,8 +404,9 @@ const NoteModal = ({ isOpen, onClose }) => {
                             )}
                         </div>
 
-                        <div className='relative' ref={reminderPickerRef}>
+                        <div ref={reminderPickerRef}>
                             <button
+                                ref={reminderButtonRef}
                                 type="button"
                                 onClick={() => setShowReminderPicker(!showReminderPicker)}
                                 className={`p-2 rounded-xl border transition-all ${showReminderPicker
@@ -369,7 +418,18 @@ const NoteModal = ({ isOpen, onClose }) => {
                                 <Clock className="size-5" />
                             </button>
                             {showReminderPicker && (
-                                <div className="absolute bottom-full left-0 mb-3 p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 w-72 z-20 flex flex-col gap-3 text-left">
+                                createPortal(
+                                <div
+                                    ref={reminderPopoverRef}
+                                    style={{
+                                        top: reminderPosition?.top ?? 0,
+                                        left: reminderPosition?.left ?? 0,
+                                        visibility: reminderPosition ? 'visible' : 'hidden',
+                                        width: 'min(18rem, calc(100vw - 1rem))',
+                                        maxHeight: 'calc(100dvh - 1rem)'
+                                    }}
+                                    className="fixed p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto z-[110] flex flex-col gap-3 text-left"
+                                >
                                     <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5 border-b border-gray-100 pb-2">
                                         <Clock className="size-4 text-purple-600" />
                                         Set Reminder
@@ -451,7 +511,9 @@ const NoteModal = ({ isOpen, onClose }) => {
                                             Clear Reminder
                                         </button>
                                     )}
-                                </div>
+                                </div>,
+                                document.body
+                                )
                             )}
                         </div>
 

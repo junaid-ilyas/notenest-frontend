@@ -40,7 +40,8 @@ const AuthPage = () => {
     e.preventDefault();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const normalizedEmail = email.trim();
+    if (!emailRegex.test(normalizedEmail)) {
       toast.error("Please enter a valid email address");
       return;
     }
@@ -59,7 +60,7 @@ const AuthPage = () => {
       if (state === "Login") {
         response = await api.post(
           "/auth/login",
-          { email, password }
+          { email: normalizedEmail, password }
         );
         toast.success("Welcome back!");
         loginSuccess(response.data.data);
@@ -67,7 +68,7 @@ const AuthPage = () => {
       } else {
         response = await api.post(
           "/auth/register",
-          { name, email, password }
+          { name, email: normalizedEmail, password }
         );
 
         const { id, email: returnedEmail } = response.data.data.user;
@@ -87,15 +88,11 @@ const AuthPage = () => {
       const status = error.response?.status;
       const message = error.response?.data?.message;
 
-      if (status === 403 && message?.includes("verify")) {
-        toast.error(message);
-      } else if (status === 400) {
-        toast.error("Invalid request. Please check your input.");
-      } else if (status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else {
-        toast.error(message || "Something went wrong!");
-      }
+      toast.error(
+        status === 500
+          ? "Server error. Please try again later."
+          : message || "Something went wrong!"
+      );
     } finally {
       setLoading(false);
     }

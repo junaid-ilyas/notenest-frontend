@@ -159,7 +159,7 @@ const NoteCard = memo(({ note }) => {
       </div>
 
       {/* DYNAMIC HEADING */}
-      <h3 className={`text-[1.05rem] font-bold mb-2 leading-snug
+      <h3 className={`text-[1.05rem] font-bold mb-2 leading-snug break-words
         ${isPinned ? 'text-yellow-900'
           : 'text-gray-900'}`}>
         {note.title}
@@ -178,7 +178,7 @@ const NoteCard = memo(({ note }) => {
               />
               <span
                 onClick={() => handleToggleTodo(note._id, index)}
-                className={`text-sm cursor-pointer select-none
+                className={`min-w-0 flex-1 break-words text-sm cursor-pointer select-none
                ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                 {item.text}
               </span>
@@ -261,6 +261,5 @@ const NoteCard = memo(({ note }) => {
 
 
 export default NoteCard;
-
 
 

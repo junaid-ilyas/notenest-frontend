@@ -148,6 +148,10 @@
 
 
 /*  */
+.prose-content {
+  overflow-wrap: anywhere;
+}
+
 .prose-content span[style] {
   color: inherit; 
 }

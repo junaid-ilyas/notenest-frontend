@@ -12,6 +12,7 @@ const NoteProvider = ({ children }) => {
 
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [fetchError, setFetchError] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +25,7 @@ const NoteProvider = ({ children }) => {
 
     const loadingRef = useRef(false);
     const hasMoreRef = useRef(true);
+    const requestIdRef = useRef(0);
 
 
     useEffect(() => {
@@ -35,18 +37,22 @@ const NoteProvider = ({ children }) => {
         }
     }, [searchQuery])
 
-    const fetchNotes = useCallback(async (pageNum, query, view = "all") => {
+    const fetchNotes = useCallback(async (pageNum, query, view = "all", signal) => {
         // ALLOW the fetch if it's page 1 (even if hasMore is false)
-        if (loadingRef.current || !accessToken) return;
+        if (!accessToken) return;
+        if (pageNum > 1 && loadingRef.current) return;
         if (pageNum > 1 && !hasMoreRef.current) return;
 
+        const requestId = ++requestIdRef.current;
         loadingRef.current = true;
         setLoading(true);
+        setFetchError(false);
 
         try {
             let url = '/api/v1/notes';
 
             const response = await api.get(url, {
+                signal,
                 params: {
                     page: pageNum,
                     limit: 12,
@@ -55,6 +61,8 @@ const NoteProvider = ({ children }) => {
                 },
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
+
+            if (requestId !== requestIdRef.current) return;
 
             const { notes: newNotes, totalPages } = response.data.data;
             const normalizedNotes = newNotes.map(note => ({
@@ -68,16 +76,14 @@ const NoteProvider = ({ children }) => {
             setHasMore(nextHasMore);
 
         } catch (error) {
-            if (error.response?.status === 404) {
-                setNotes([]);
-                hasMoreRef.current = false;
-                setHasMore(false);
-            } else {
-                toast.error("Error fetching notes");
-            }
+            if (requestId !== requestIdRef.current || signal?.aborted) return;
+            setFetchError(true);
+            toast.error(error.response?.data?.message || "Error fetching notes");
         } finally {
-            loadingRef.current = false;
-            setLoading(false);
+            if (requestId === requestIdRef.current) {
+                loadingRef.current = false;
+                setLoading(false);
+            }
         }
     }, [accessToken]);
 
@@ -90,11 +96,26 @@ const NoteProvider = ({ children }) => {
     }, [debounceSearch, view]);
 
     useEffect(() => {
-        // Only fetch if we have an accessToken
-        if (accessToken) {
-            fetchNotes(page, debounceSearch, view);
+        if (!accessToken) {
+            requestIdRef.current += 1;
+            loadingRef.current = false;
+            hasMoreRef.current = true;
+            setNotes([]);
+            setLoading(false);
+            setFetchError(false);
+            setPage(1);
+            setHasMore(true);
+            return;
         }
+
+        const controller = new AbortController();
+        fetchNotes(page, debounceSearch, view, controller.signal);
+        return () => controller.abort();
     }, [page, debounceSearch, view, fetchNotes, accessToken]);
+
+    const retryFetchNotes = useCallback(() => {
+        fetchNotes(page, debounceSearch, view);
+    }, [fetchNotes, page, debounceSearch, view]);
 
 
     const handleToggleTodo = async (noteId, itemIndex) => {
@@ -417,6 +438,7 @@ const NoteProvider = ({ children }) => {
                 notes,
                 setNotes,
                 loading,
+                fetchError,
                 hasMore,
                 searchQuery,
                 setSearchQuery,
@@ -436,6 +458,7 @@ const NoteProvider = ({ children }) => {
                 handleEmptyTrash,
                 openNoteModal,
                 fetchNotes,
+                retryFetchNotes,
                 view,
                 setView
             }}>

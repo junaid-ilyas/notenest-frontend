@@ -428,7 +428,7 @@ const NoteModal = ({ isOpen, onClose }) => {
                                         width: 'min(18rem, calc(100vw - 1rem))',
                                         maxHeight: 'calc(100dvh - 1rem)'
                                     }}
-                                    className="fixed p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto z-[110] flex flex-col gap-3 text-left"
+                                    className="fixed p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto z-110 flex flex-col gap-3 text-left"
                                 >
                                     <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5 border-b border-gray-100 pb-2">
                                         <Clock className="size-4 text-purple-600" />
